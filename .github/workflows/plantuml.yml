@@ -1,9 +1,12 @@
-- name: Render PlantUML to Wiki
-  uses: frederikheld/render-plantuml-to-wiki-action@v1.0.1
-  with:
-    # Secure token to access wiki repo
-    WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
-    # Directory in repo to read PlantUML source files from
-    INPUT_DIR: 'uml/'
-    # Directory in wiki to write rendered diagrams to
-    OUTPUT_DIR: 'images/'
+on: push
+
+jobs:
+  plantuml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Render PlantUML to Wiki
+        uses: frederikheld/render-plantuml-to-wiki-action@v1.0.1
+        with:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+          INPUT_DIR: 'uml/'
+          OUTPUT_DIR: 'images/'
