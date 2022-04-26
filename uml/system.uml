@@ -1,4 +1,4 @@
-@startuml
+@startuml system
 
 ' title Azure IoT Edge runtime components diagram
 
