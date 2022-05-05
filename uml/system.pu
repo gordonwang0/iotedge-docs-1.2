@@ -1,0 +1,106 @@
+@startuml
+
+'
+' Look & feel
+'
+skinparam rectangle {
+    roundCorner<<execution environment>> 25
+	LineThickness<<security boundary>> 1
+	LineColor<<security boundary>> black
+}
+
+'
+' Azure Cloud
+'
+cloud Azure #line:blue;line.bold;text:black {
+	IoTHubDeviceAPI -- [Azure IoT Hub]
+	DeviceScopeSyncAPI -- [Azure IoT Hub]
+	ProvisioningAPI -- [DPS]
+}
+
+'
+' Edge Device
+'
+frame "Edge Device" as EdgeDevice {
+	OCI -- [Container Engine]
+	P11 -- [TPM/HSM]
+
+	package "Edge Native Processes" as NativeProcesses #line:red;line.bold;text:black {
+		package IoTIdentityService {
+			IS - [Identity Service]
+			CS - [Certificate Service]
+			KS - [Keys Service]
+			TS - [TPM Service]
+		}
+
+		Management -- [Edge Daemon]
+		Workload -- [Edge Daemon]
+	}
+
+	rectangle "OCI Containers" as OCIContainers #line:darkgreen;line.bold;text:black {
+		package "Edge Containers" as EdgeContainers #line:red;line.bold;text:black {
+			EdgeAgentMetrics -- [Edge Agent]
+
+			EdgeHubDeviceAPI -- [Edge Hub]
+			EdgeHubMetrics -- [Edge Hub]
+			EdgeDeviceScopeSync -- [Edge Hub]
+		}
+
+		package "User Container" as UserContainer #palegreen;line:green;line.bold;text:black {
+			package "Azure IoT Device SDK" as MSDK #palegreen;line:green;line.bold;text:black {
+			}
+		}
+	}
+}
+
+'
+' Child Device
+'
+frame "Child Device" as ChildDevice {
+	package "Application" #palegreen;line:green;line.bold;text:black {
+		package "Azure IoT Device SDK" as DSDK #palegreen;line:green;line.bold;text:black {
+		}
+	}
+}
+
+'
+' IoT Identity Service
+'
+[Identity Service] --> [CS] : HTTP/UDS
+[Identity Service] --> [KS] : HTTP/UDS
+[Identity Service] --> [TS] : HTTP/UDS
+[Identity Service] <.[#blue,dotted,thickness=8]do.> ProvisioningAPI : HTTPS
+
+[Certificate Service] --> [KS] : HTTP/UDS
+[TPM Service] --> [P11] : PKCS #11
+[Keys Service] --> [P11] : PKCS #11
+
+[Edge Daemon] --> IS : HTTP/UDS
+[Edge Daemon] --> CS : HTTP/UDS
+[Edge Daemon] --> KS : HTTP/UDS
+[Edge Daemon] -up-> OCI : HTTP/UDS
+
+'
+' Container Engine
+'
+[Container Engine] -up-> OCIContainers
+
+'
+' Edge Containers
+'
+[Edge Agent] --> Workload : HTTP/UDS
+[Edge Agent] --> Management : HTTP/UDS
+
+[Edge Agent] <.[#blue,dotted,thickness=8]do.> IoTHubDeviceAPI : AMQPS/MQTTS
+[Edge Hub] <.[#blue,dotted,thickness=8]do.> IoTHubDeviceAPI : AMQPS/MQTTS
+
+[Edge Hub] --> Workload : HTTP/UDS
+[Edge Hub] <.[#blue,dotted,thickness=8]do.> DeviceScopeSyncAPI : HTTPS
+
+'
+' User applications
+'
+MSDK --> EdgeHubDeviceAPI : [AMQPS|HTTPS|MQTTS]
+DSDK <.[#blue,dotted,thickness=8]do.> EdgeHubDeviceAPI : [AMQPS|MQTTS]
+
+@enduml
